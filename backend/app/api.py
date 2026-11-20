@@ -26,7 +26,8 @@ def _preview(session: Session, batch_id: int, limit: int = 20) -> list[ErrorPrev
 
 
 def _summary(session: Session, batch: ImportBatch, already_imported: bool = False) -> ImportSummary:
-    return ImportSummary.model_validate({**batch.__dict__, "already_imported": already_imported, "error_preview": _preview(session, batch.id)})
+    summary = ImportSummary.model_validate(batch, from_attributes=True)
+    return summary.model_copy(update={"already_imported": already_imported, "error_preview": _preview(session, batch.id)})
 
 
 @router.get("/health")
