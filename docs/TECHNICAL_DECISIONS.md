@@ -1,0 +1,21 @@
+# Technical Decisions
+
+- The CSV engine is independent of the database so validation can be tested deterministically and reused by a future import API.
+- Python's strict `csv.reader` is used with `utf-8-sig`, preserving quoted commas, BOM support, and physical line tracking through a counted input iterator.
+- `Decimal` stores marks to avoid float artifacts; dates use an injected reference date for reproducible age checks.
+- IDs are reserved after syntactic validation, before other field errors are considered, matching the duplicate edge case.
+- FastAPI and React/Vite are scaffolded with minimal dependencies; persistence and Tailwind are intentionally deferred by the phase boundary.
+- PostgreSQL is accessed through SQLAlchemy 2.x and psycopg; Alembic owns schema changes and `create_all()` is not used by the application.
+- A single transaction creates the batch, accepted student changes, rejected-row diagnostics, and completed summary. API failures roll it back.
+- Existing normalized IDs are updated in one prefetch query; new IDs are inserted, preserving the existing student's internal primary key.
+- An identical SHA-256 upload returns the original completed batch with `already_imported: true` and does not create another batch.
+- Uploads are copied to a bounded temporary file before validation; the temporary file is removed after processing.
+- The Phase 2 API is intentionally limited to `POST /api/imports`, `GET /api/imports/{id}`, `GET /api/imports/{id}/errors`, and `GET /api/health`; student browsing and reports are deferred.
+- Phase 3 reuses the existing `students` table and adds no migration or database entities.
+- Student listing filters and pagination execute in PostgreSQL; list queries select only listing columns, count with the same predicates, and order by `student_id` then internal `id` for stable pages.
+- ID-like searches use case-insensitive exact normalized-ID matching; other searches use case-insensitive literal name substring matching. Empty trimmed search is omitted.
+- Reports use Decimal arithmetic. Grades are A+ at 90+, A at 80+, B at 70+, C at 60+, D at 50+, otherwise F. Passing requires overall percentage >= 40 and every subject >= 33.
+- Phase 4 uses a small native-fetch API layer and React Router; TanStack Query and a UI framework are unnecessary for the current three screens.
+- The frontend reads all report calculations from the backend and does not recalculate grades or pass/fail states.
+- Vite proxies `/api` to the local FastAPI server. `VITE_API_BASE_URL` can override the API base for another environment.
+- Phase 5 verification does not substitute SQLite: the local PostgreSQL service is running, but no `DATABASE_URL` or isolated `TEST_DATABASE_URL` credentials are configured and Docker is unavailable.
