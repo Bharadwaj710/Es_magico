@@ -18,6 +18,8 @@ The large supplied file contains an additional `parent_phone` column. It is acce
 
 Validation is deterministic and independent of PostgreSQL. Valid values are normalized before persistence: IDs and sections are uppercased, emails are lowercased, names are whitespace-normalized, and accepted dates/marks become typed values.
 
+For the supplied large dataset, 315 rows were rejected and 348 individual validation errors were stored. These counts differ because one rejected row can contain more than one validation error.
+
 ## Duplicate handling and persistence
 
 - Duplicate IDs within one file are reported as row errors.

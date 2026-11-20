@@ -44,16 +44,16 @@ Create an application role and two databases: `es_magico_test` for application/a
 ## Quick Start
 
 1. Install Python 3.12+, Node.js 20+, npm, and PostgreSQL 16.
-2. In PostgreSQL, create the application role and two separate databases. Use pgAdmin or an administrator `psql` session; do not commit the role password.
+2. Using pgAdmin or an administrator `psql` session connected as a PostgreSQL administrator, create the application role and two separate databases. These commands require administrator privileges; do not run them through the application role.
 
    ```sql
-   CREATE ROLE es_magico_app LOGIN PASSWORD '<local-password>';
+   CREATE ROLE es_magico_app LOGIN PASSWORD '<replace-with-local-password>';
    CREATE DATABASE es_magico_test OWNER es_magico_app;
    CREATE DATABASE es_magico_pytest OWNER es_magico_app;
    ```
 
-   If the role or databases already exist, keep them and verify their names instead of recreating them.
-3. Copy `.env.example` to `.env` and fill in the local password in both URLs. The database names must remain different:
+   If the role or databases already exist, keep them and verify their names instead of recreating them. Replace the password placeholder with the local application-role password; never commit it or paste it into chat.
+3. Copy `.env.example` to `.env` and replace `<password>` in both URLs with that password. The database names must remain different. If the password contains reserved URL characters such as `@`, `:`, `/`, or `#`, URL-encode those characters first:
 
    ```powershell
    Copy-Item .env.example .env
@@ -63,20 +63,20 @@ Create an application role and two databases: `es_magico_test` for application/a
 
    ```powershell
    py -3.12 -m venv .venv
-   .venv\Scripts\Activate.ps1
-   python -m pip install -e ".[test]"
+   .\.venv\Scripts\Activate.ps1
+   .\.venv\Scripts\python.exe -m pip install -e ".[test]"
    ```
 
 5. Apply the existing Alembic migration to the application database:
 
    ```powershell
-   .venv\Scripts\alembic.exe upgrade head
+   .\.venv\Scripts\alembic.exe upgrade head
    ```
 
 6. Start the backend in one PowerShell window and the frontend in another:
 
    ```powershell
-   .venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+   .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
    ```
 
    ```powershell
@@ -100,25 +100,22 @@ MAX_IMPORT_FILE_BYTES=10485760
 
 The test fixtures verify `current_database()` through PostgreSQL and allow destructive cleanup only on `es_magico_pytest`.
 
-## Backend setup and execution
+## Backend execution
 
-From the repository root:
+After completing Quick Start, run the backend from the repository root:
 
 ```powershell
-py -3.12 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -e ".[test]"
-.venv\Scripts\alembic.exe upgrade head
-.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+.\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
 ```
 
 The API is available at `http://127.0.0.1:8000`.
 
-## Frontend setup and execution
+## Frontend execution
+
+After completing Quick Start, run the frontend in a second PowerShell window:
 
 ```powershell
-cd frontend
-npm ci
+Set-Location frontend
 npm run dev
 ```
 
@@ -132,7 +129,7 @@ Do not alter the supplied files. Upload a CSV through the UI or with:
 curl.exe -X POST -F "file=@D:\path\students_small.csv" http://127.0.0.1:8000/api/imports
 ```
 
-The supplied acceptance results are 25 read/16 accepted/9 rejected for `students_small.csv`, and 5,000 read/4,685 accepted/315 rejected for `students_sample.csv`.
+The supplied acceptance results are 25 read/16 accepted/9 rejected for `students_small.csv`, and 5,000 read/4,685 accepted/315 rejected for `students_sample.csv`. These are actual dataset-import results, not claims that the automated pytest command reimports the supplied files.
 
 ## API endpoints
 
@@ -148,14 +145,12 @@ The supplied acceptance results are 25 read/16 accepted/9 rejected for `students
 
 Student listing query parameters are `search`, `grade_level`, `section`, `limit`, and `offset`.
 
-## Tests and verification
-
 ## Run Tests — One Command
 
 From the repository root, after PostgreSQL is running and `.env` points `TEST_DATABASE_URL` to the separate `es_magico_pytest` database:
 
 ```powershell
-.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
 This runs the complete backend test suite. The test database must be separate from `DATABASE_URL`; never point it at the application acceptance database. The fixtures verify the actual connected PostgreSQL database with `current_database()` before destructive cleanup and refuse any database other than `es_magico_pytest`.
@@ -164,13 +159,7 @@ The suite covers CSV parsing and validation, required and invalid fields, duplic
 
 Latest recorded result: **29 passed, 0 failed, 0 skipped**. This is the latest verified result, not a guarantee for every machine or environment.
 
-Run backend tests only after configuring the isolated `TEST_DATABASE_URL`:
-
-```powershell
-.venv\Scripts\python.exe -m pytest -q
-```
-
-The suite runs destructive cleanup only against `es_magico_pytest`. Build and live browser checks:
+The suite runs destructive cleanup only against `es_magico_pytest`. Build and live browser checks are separate from this one-command backend test run:
 
 ```powershell
 cd frontend
@@ -191,6 +180,8 @@ These are the results from the two original supplied CSV files, persisted throug
 | `students_sample.csv` | 5,000 | 4,685 | 315 |
 
 Final PostgreSQL state: **4,685 distinct students**, **2 import batches**, and **357 individual row errors**. The datasets overlap by **16 accepted student IDs**: the small import created 16 students, while the large import inserted 4,669 new students and updated those 16 existing students. Therefore the final count is 4,685, not 4,701.
+
+The large dataset has **315 rejected rows** but **348 individual validation errors** because one rejected row can contain multiple field errors.
 
 ## Docker
 
