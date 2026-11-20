@@ -41,6 +41,52 @@ docker-compose.yml  optional PostgreSQL/backend/frontend deployment
 
 Create an application role and two databases: `es_magico_test` for application/acceptance data and `es_magico_pytest` for destructive integration tests. Never point both URLs at the same database.
 
+## Quick Start
+
+1. Install Python 3.12+, Node.js 20+, npm, and PostgreSQL 16.
+2. In PostgreSQL, create the application role and two separate databases. Use pgAdmin or an administrator `psql` session; do not commit the role password.
+
+   ```sql
+   CREATE ROLE es_magico_app LOGIN PASSWORD '<local-password>';
+   CREATE DATABASE es_magico_test OWNER es_magico_app;
+   CREATE DATABASE es_magico_pytest OWNER es_magico_app;
+   ```
+
+   If the role or databases already exist, keep them and verify their names instead of recreating them.
+3. Copy `.env.example` to `.env` and fill in the local password in both URLs. The database names must remain different:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+4. Create the backend environment and install dependencies:
+
+   ```powershell
+   py -3.12 -m venv .venv
+   .venv\Scripts\Activate.ps1
+   python -m pip install -e ".[test]"
+   ```
+
+5. Apply the existing Alembic migration to the application database:
+
+   ```powershell
+   .venv\Scripts\alembic.exe upgrade head
+   ```
+
+6. Start the backend in one PowerShell window and the frontend in another:
+
+   ```powershell
+   .venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+   ```
+
+   ```powershell
+   Set-Location frontend
+   npm ci
+   npm run dev
+   ```
+
+   Open the Vite URL shown in the frontend terminal. The development proxy sends `/api` requests to FastAPI.
+
 ## Environment configuration
 
 Copy `.env.example` to `.env` and replace only the local password placeholders. Keep `.env` untracked.
@@ -104,6 +150,20 @@ Student listing query parameters are `search`, `grade_level`, `section`, `limit`
 
 ## Tests and verification
 
+## Run Tests — One Command
+
+From the repository root, after PostgreSQL is running and `.env` points `TEST_DATABASE_URL` to the separate `es_magico_pytest` database:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
+```
+
+This runs the complete backend test suite. The test database must be separate from `DATABASE_URL`; never point it at the application acceptance database. The fixtures verify the actual connected PostgreSQL database with `current_database()` before destructive cleanup and refuse any database other than `es_magico_pytest`.
+
+The suite covers CSV parsing and validation, required and invalid fields, duplicate IDs and duplicate files, import persistence, student upserts, transaction rollback, API behavior, database isolation, and connection timeout handling.
+
+Latest recorded result: **29 passed, 0 failed, 0 skipped**. This is the latest verified result, not a guarantee for every machine or environment.
+
 Run backend tests only after configuring the isolated `TEST_DATABASE_URL`:
 
 ```powershell
@@ -121,6 +181,17 @@ npm run test:e2e
 
 The live Playwright tests require a running FastAPI backend and existing imported data; they do not upload the supplied CSVs.
 
+## Acceptance verification
+
+These are the results from the two original supplied CSV files, persisted through the real FastAPI/PostgreSQL import pipeline. They are separate from the automated test count above.
+
+| Dataset | Rows read | Accepted | Rejected |
+|---|---:|---:|---:|
+| `students_small.csv` | 25 | 16 | 9 |
+| `students_sample.csv` | 5,000 | 4,685 | 315 |
+
+Final PostgreSQL state: **4,685 distinct students**, **2 import batches**, and **357 individual row errors**. The datasets overlap by **16 accepted student IDs**: the small import created 16 students, while the large import inserted 4,669 new students and updated those 16 existing students. Therefore the final count is 4,685, not 4,701.
+
 ## Docker
 
 Docker support is provided in `docker-compose.yml`, `Dockerfile.backend`, `Dockerfile.frontend`, and `nginx.conf`. Copy `.env.docker.example` to `.env.docker`, set a local PostgreSQL password, and run:
@@ -134,3 +205,5 @@ The Compose database uses a named persistent volume. Docker execution was not ve
 ## Evidence
 
 Live verification artifacts are kept locally under `frontend/test-results/` and are ignored by Git. They include import, desktop student, mobile student, academic report screenshots, and a print-rendered PDF.
+
+The print PDF verifies print-media rendering only; OS-level print-dialog behavior was not tested. Docker files are provided, but Docker runtime execution remains unverified.
