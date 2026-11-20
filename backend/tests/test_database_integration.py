@@ -17,7 +17,7 @@ from backend.tests.db_guard import (
     verify_test_database,
 )
 
-SAMPLE_PACK = Path(r"D:\Es Magico - Full-stack Intern Assignment - Sample Pack")
+FIXTURE = Path(__file__).parent / "fixtures" / "students_fixture.csv"
 
 
 @pytest.fixture()
@@ -36,7 +36,7 @@ def database_engine():
 
 def test_migration_and_small_import(database_engine) -> None:
     with Session(database_engine) as session:
-        batch, already_imported = persist_import(session, SAMPLE_PACK / "students_small.csv", "students_small.csv", date(2026, 11, 19))
+        batch, already_imported = persist_import(session, FIXTURE, "students_fixture.csv", date(2026, 11, 19))
         assert not already_imported
         assert (batch.rows_read, batch.accepted_rows, batch.rejected_rows) == (25, 16, 9)
         assert session.scalar(select(Student.id).limit(1)) is not None
@@ -45,8 +45,8 @@ def test_migration_and_small_import(database_engine) -> None:
 
 def test_identical_import_is_reported_without_duplication(database_engine) -> None:
     with Session(database_engine) as session:
-        first, _ = persist_import(session, SAMPLE_PACK / "students_small.csv", "students_small.csv", date(2026, 11, 19))
+        first, _ = persist_import(session, FIXTURE, "students_fixture.csv", date(2026, 11, 19))
         with pytest.raises(AlreadyImported) as duplicate:
-            persist_import(session, SAMPLE_PACK / "students_small.csv", "students_small.csv", date(2026, 11, 19))
+            persist_import(session, FIXTURE, "students_fixture.csv", date(2026, 11, 19,))
         assert duplicate.value.batch.id == first.id
         assert session.scalar(select(func.count()).select_from(ImportBatch)) == 1

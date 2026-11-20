@@ -1,0 +1,26 @@
+student_id,full_name,email,date_of_birth,grade_level,section,maths,science,english,social_studies,second_language
+STU00001,Rohan Kaur,rohan.kaur@example.edu,2012-04-20,9,D,60,60,60,60,57.60
+STU00002,Yash Fernandes,yash.fernandes@example.edu,2011-03-12,10,B,70,71,72,73,74
+STU00003,Anika Shah,anika.shah@example.edu,2010-06-01,12,A,90,91,92,93,94
+STU00004,Farhan Bhat,farhan.bhat@example.edu,2012-01-20,9,D,45,50,55,60,65
+STU00005,Sneha Kapoor,sneha.kapoor@example.edu,2011-07-18,11,B,80,81,82,83,84
+STU00006,Manav Hegde,manav.hegde@example.edu,2013-02-14,8,C,32,40,44,48,52
+STU00007,Sana Fernandes,sana.fernandes@example.edu,2013-09-22,8,B,75,76,77,78,79
+STU00008,Ishaan Yadav,ishaan.yadav@example.edu,2015-01-10,4,E,66,67,68,69,70
+STU00009,Joseph Khan,joseph.khan@example.edu,2013-05-09,8,E,55,56,57,58,59
+STU00010,Kabir Das,kabir.das@example.edu,2016-02-11,2,A,88,87,86,85,84
+STU00011,Ira Rao,ira.rao@example.edu,2011-10-02,10,E,42,43,44,45,46
+STU00012,Sneha Verma,sneha.verma@example.edu,2014-03-19,3,B,61,62,63,64,65
+STU00013,Manav Deshmukh,manav.deshmukh@example.edu,2013-11-06,6,D,71,72,73,74,75
+STU00014,Vivaan Bose,vivaan.bose@example.edu,2014-08-27,3,E,51,52,53,54,55
+STU00015,Kavya Joshi,kavya.joshi@example.edu,2016-05-30,2,B,95,94,93,92,91
+STU00016,Siddharth Sharma,siddharth.sharma@example.edu,2015-12-15,1,E,20,25,30,35,40
+BAD0001,,bad1@example.edu,2012-01-01,5,A,10,10,10,10,10
+BAD0002,Invalid Email,bad-email,2012-01-01,5,A,10,10,10,10,10
+BAD0003,Invalid Date,bad3@example.edu,31/02/2012,5,A,10,10,10,10,10
+BAD0004,Invalid Grade,bad4@example.edu,2012-01-01,13,A,10,10,10,10,10
+BAD0005,Invalid Section,bad5@example.edu,2012-01-01,5,Z,10,10,10,10,10
+BAD0006,Invalid Maths,bad6@example.edu,2012-01-01,5,A,-1,10,10,10,10
+BAD0007,Invalid Science,bad7@example.edu,2012-01-01,5,A,10,101,10,10,10
+BAD0008,Invalid English,bad8@example.edu,2012-01-01,5,A,10,10,nope,10,10
+BAD0009,Invalid DOB Age,bad9@example.edu,2024-01-01,5,A,10,10,10,10,10

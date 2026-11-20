@@ -25,6 +25,8 @@ Es Magico is a full-stack student-results portal that validates supplied CSV fil
 ```text
 backend/app/        FastAPI routes, CSV processing, persistence, grading
 backend/tests/      unit, integration, isolation, and timeout tests
+backend/scripts/    portable synthetic demo seed command
+backend/tests/fixtures/ committed minimal test CSV fixture
 alembic/            database migration environment and revisions
 frontend/src/       React application
 frontend/tests/     live Playwright verification
@@ -39,7 +41,7 @@ docker-compose.yml  optional PostgreSQL/backend/frontend deployment
 - PostgreSQL 16 for local execution.
 - Optional: Docker Desktop with Compose.
 
-Create an application role and two databases: `es_magico_test` for application/acceptance data and `es_magico_pytest` for destructive integration tests. Never point both URLs at the same database.
+Create an application role and two databases: `es_magico_test` for application/acceptance data and `es_magico_pytest` for destructive integration tests. Never point both URLs at the same database. For a disposable demonstration environment, create a third database such as `es_magico_demo`.
 
 ## Quick Start
 
@@ -100,6 +102,19 @@ MAX_IMPORT_FILE_BYTES=10485760
 
 The test fixtures verify `current_database()` through PostgreSQL and allow destructive cleanup only on `es_magico_pytest`.
 
+## Seed synthetic demonstration data
+
+The portable seed command creates three clearly named synthetic students through the existing importer and persistence service. It is idempotent: repeating it detects the same SHA-256 file and does not create another batch. Use a separate demo database, never `es_magico_test` or `es_magico_pytest`:
+
+```powershell
+$env:DEMO_DATABASE_URL="postgresql+psycopg://es_magico_app:<password>@127.0.0.1:5432/es_magico_demo"
+$env:DATABASE_URL=$env:DEMO_DATABASE_URL
+.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\python.exe -m backend.scripts.seed_demo
+```
+
+Replace `<password>` locally and URL-encode reserved characters. The script refuses the acceptance database. The database must already exist and the application role must have permission to use it.
+
 ## Backend execution
 
 After completing Quick Start, run the backend from the repository root:
@@ -155,7 +170,7 @@ From the repository root, after PostgreSQL is running and `.env` points `TEST_DA
 
 This runs the complete backend test suite. The test database must be separate from `DATABASE_URL`; never point it at the application acceptance database. The fixtures verify the actual connected PostgreSQL database with `current_database()` before destructive cleanup and refuse any database other than `es_magico_pytest`.
 
-The suite covers CSV parsing and validation, required and invalid fields, duplicate IDs and duplicate files, import persistence, student upserts, transaction rollback, API behavior, database isolation, and connection timeout handling.
+The suite uses the committed synthetic fixture under `backend/tests/fixtures/`; it does not require the original Es Magico sample-pack directory. It covers CSV parsing and validation, required and invalid fields, duplicate IDs and duplicate files, import persistence, student upserts, transaction rollback, API behavior, database isolation, and connection timeout handling.
 
 Latest recorded result: **29 passed, 0 failed, 0 skipped**. This is the latest verified result, not a guarantee for every machine or environment.
 
@@ -191,7 +206,13 @@ Docker support is provided in `docker-compose.yml`, `Dockerfile.backend`, `Docke
 docker compose --env-file .env.docker up --build
 ```
 
-The Compose database uses a named persistent volume. Docker execution was not verified in this environment because the Docker daemon was unavailable.
+The Compose database uses a named persistent volume and the backend runs Alembic migrations on startup. To seed that disposable Compose database after startup, run the seed command inside the backend container with a separate URL targeting the Compose database:
+
+```powershell
+docker compose --env-file .env.docker exec -e DEMO_DATABASE_URL="postgresql+psycopg://es_magico_app:<password>@db:5432/es_magico" backend python -m backend.scripts.seed_demo
+```
+
+Replace the password placeholder locally. Docker execution was not verified in this environment because the Docker daemon was unavailable; the commands above are provided as the reproducible deployment path, not as verified runtime evidence.
 
 ## Evidence
 

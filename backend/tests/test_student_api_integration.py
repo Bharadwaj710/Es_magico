@@ -19,7 +19,7 @@ from backend.tests.db_guard import (
     verify_test_database,
 )
 
-SAMPLE_PACK = Path(r"D:\Es Magico - Full-stack Intern Assignment - Sample Pack")
+FIXTURE = Path(__file__).parent / "fixtures" / "students_fixture.csv"
 
 
 @pytest.fixture()
@@ -30,7 +30,7 @@ def database_engine():
     stamp_test_database_base()
     upgrade_test_database()
     with Session(engine) as session:
-        persist_import(session, SAMPLE_PACK / "students_small.csv", "students_small.csv", date(2026, 11, 19))
+        persist_import(session, FIXTURE, "students_fixture.csv", date(2026, 11, 19))
     yield engine
     verify_test_database(engine)
     Base.metadata.drop_all(engine)
